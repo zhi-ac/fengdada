@@ -23,7 +23,10 @@
       </a-menu>
     </a-col>
     <a-col flex="100px">
-      <div>
+      <div v-if="loginUserStore.loginUser.id">
+        {{ loginUserStore.loginUser.userName ?? "无名" }}
+      </div>
+      <div v-else>
         <a-button type="primary" href="/user/login">登录</a-button>
       </div>
     </a-col>
@@ -31,9 +34,13 @@
 </template>
 <script setup lang="ts">
 import { routes } from "../router/routes";
-import { useRoute, useRouter } from "vue-router";
-import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { computed, ref } from "vue";
+import { useLoginUserStore } from "@/store/userStore";
+import checkAccess from "@/access/checkAccess";
 
+const loginUserStore = useLoginUserStore();
+loginUserStore.fetchLoginUser();
 const router = useRouter();
 
 // 路由跳转事件
@@ -43,11 +50,17 @@ const doMenuClick = (key: string) => {
   });
 };
 // 展示在菜单的路由数组
-const visibleRoutes = routes.filter((item) => {
-  if (item.meta?.hideInMenu) {
-    return false;
-  }
-  return true;
+const visibleRoutes = computed(() => {
+  return routes.filter((item) => {
+    if (item.meta?.hideInMenu) {
+      return false;
+    }
+    // 根据权限过滤菜单
+    if (!checkAccess(loginUserStore.loginUser, item.meta?.access as string)) {
+      return false;
+    }
+    return true;
+  });
 });
 
 // Tab 栏选中菜单项
