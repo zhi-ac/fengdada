@@ -73,3 +73,7 @@ knife4j:
         api-rule: package
         api-rule-resources:
           - com.sheng.fengdada.controller
+
+ai:
+  apiKey: 10f8321db9008c822ede3175ef0313d8.NIyJJ9l6wuqtncaP
+

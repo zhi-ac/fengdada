@@ -10,6 +10,7 @@ import com.sheng.fengdada.common.ResultUtils;
 import com.sheng.fengdada.constant.UserConstant;
 import com.sheng.fengdada.exception.BusinessException;
 import com.sheng.fengdada.exception.ThrowUtils;
+import com.sheng.fengdada.manager.AiManager;
 import com.sheng.fengdada.model.dto.question.*;
 import com.sheng.fengdada.model.entity.App;
 import com.sheng.fengdada.model.entity.Question;
@@ -43,6 +44,11 @@ public class QuestionController {
     @Resource
     private UserService userService;
 
+    @Resource
+    private AppService appService;
+
+    @Resource
+    private AiManager aiManager;
 
     // region 增删改查
 
@@ -244,7 +250,6 @@ public class QuestionController {
     }
 
     // endregion
-
     // region AI 生成题目功能
     private static final String GENERATE_QUESTION_SYSTEM_MESSAGE = "你是一位严谨的出题专家，我会给你如下信息：\n" +
             "```\n" +
@@ -282,6 +287,60 @@ public class QuestionController {
         userMessage.append(optionNumber);
         return userMessage.toString();
     }
+
+    @PostMapping("/ai_generate")
+    public BaseResponse<List<QuestionContentDTO>> aiGenerateQuestion(
+            @RequestBody AiGenerateQuestionRequest aiGenerateQuestionRequest) {
+        ThrowUtils.throwIf(aiGenerateQuestionRequest == null, ErrorCode.PARAMS_ERROR);
+        // 获取参数
+        Long appId = aiGenerateQuestionRequest.getAppId();
+        int questionNumber = aiGenerateQuestionRequest.getQuestionNumber();
+        int optionNumber = aiGenerateQuestionRequest.getOptionNumber();
+        // 获取应用信息
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR);
+        // 封装 Prompt
+        String userMessage = getGenerateQuestionUserMessage(app, questionNumber, optionNumber);
+        // AI 生成
+        String result = aiManager.doSyncRequest(GENERATE_QUESTION_SYSTEM_MESSAGE, userMessage, null);
+        // 截取需要的 JSON 信息
+        int start = result.indexOf("[");
+        int end = result.lastIndexOf("]");
+        String json = result.substring(start, end + 1);
+        json = json.replace("\\\"", "\"").replace("\\n", "");  // 替换转义字符
+        List<QuestionContentDTO> questionContentDTOList = JSONUtil.toList(json, QuestionContentDTO.class);
+        return ResultUtils.success(questionContentDTOList);
+    }
+/*
+
+
+
+    @PostMapping("/ai_generate")
+    public BaseResponse<List<QuestionContentDTO>> aiGenerateQuestion(
+            @RequestBody AiGenerateQuestionRequest aiGenerateQuestionRequest) {
+        ThrowUtils.throwIf(aiGenerateQuestionRequest == null, ErrorCode.PARAMS_ERROR);
+        // 获取参数
+        Long appId = aiGenerateQuestionRequest.getAppId();
+        int questionNumber = aiGenerateQuestionRequest.getQuestionNumber();
+        int optionNumber = aiGenerateQuestionRequest.getOptionNumber();
+        // 获取应用信息
+        App app = appService.getById(appId);
+        ThrowUtils.throwIf(app == null, ErrorCode.NOT_FOUND_ERROR);
+        // 封装 Prompt
+        String userMessage = getGenerateQuestionUserMessage(app, questionNumber, optionNumber);
+        // AI 生成
+        String result = aiManager.doSyncRequest(GENERATE_QUESTION_SYSTEM_MESSAGE, userMessage, null);
+        // 截取需要的 JSON 信息
+        int start = result.indexOf("[");
+        int end = result.lastIndexOf("]");
+        String json = result.substring(start, end + 1);
+        json = json.replace("\\\"", "\"").replace("\\n", "");  // 替换转义字符
+        List<QuestionContentDTO> questionContentDTOList = JSONUtil.toList(json, QuestionContentDTO.class);
+        return ResultUtils.success(questionContentDTOList);
+    }
+*/
+
+
 
 }
 
