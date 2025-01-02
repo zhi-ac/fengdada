@@ -8,10 +8,21 @@
       auto-label-width
       @submit="handleSubmit"
     >
+      <a-form-item label="应用 id">
+        {{ appId }}
+      </a-form-item>
       <a-form-item label="题目列表" :content-flex="false" :merge-props="false">
-        <a-button @click="addQuestion(questionContent.length)">
-          底部添加题目
-        </a-button>
+        <a-space size="medium">
+          <a-button @click="addQuestion(questionContent.length)">
+            底部添加题目
+          </a-button>
+          <!-- AI 生成题目抽屉 -->
+          <AiGenerateQuestionDrawer
+            :appId="appId"
+            :onSuccess="onAiGenerateSuccess"
+          />
+        </a-space>
+
         <!-- 遍历每道题目 -->
         <div v-for="(question, index) of questionContent" :key="index">
           <!-- 题目信息展示 -->
@@ -102,6 +113,7 @@ import {
   editQuestionUsingPost,
   listQuestionVoByPageUsingPost,
 } from "@/api/questionController";
+import AiGenerateQuestionDrawer from "@/views/add/components/AiGenerateQuestionDrawer.vue";
 
 interface Props {
   appId: string;
@@ -194,6 +206,11 @@ const deleteQuestionOption = (
 
 const router = useRouter();
 const loginUserStore = useLoginUserStore();
+
+const onAiGenerateSuccess = (result: API.QuestionContentDTO[]) => {
+  questionContent.value = [...questionContent.value, ...result];
+  message.success(`AI 生成题目成功，已新增 ${result.length} 道题目`);
+};
 
 /**
  * 提交
