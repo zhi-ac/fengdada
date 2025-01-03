@@ -20,6 +20,9 @@
           <AiGenerateQuestionDrawer
             :appId="appId"
             :onSuccess="onAiGenerateSuccess"
+            :onSSESuccess="onAiGenerateSuccessSSE"
+            :onSSEClose="onSSEClose"
+            :onSSEStart="onSSEStart"
           />
         </a-space>
 
@@ -239,5 +242,28 @@ const handleSubmit = async () => {
   } else {
     message.error("创建失败，" + res.data.message);
   }
+};
+
+/**
+ * AI 生成题目成功后执行（SSE）
+ */
+const onAiGenerateSuccessSSE = (result: API.QuestionContentDTO) => {
+  questionContent.value = [...questionContent.value, result];
+};
+
+/**
+ * SSE 开始生成
+ * @param event
+ */
+const onSSEStart = (event: any) => {
+  message.success("开始生成");
+};
+
+/**
+ * SSE 生成完毕
+ * @param event
+ */
+const onSSEClose = (event: any) => {
+  message.success("生成完毕");
 };
 </script>
